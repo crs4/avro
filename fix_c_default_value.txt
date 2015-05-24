@@ -1,0 +1,47 @@
+I think I was a bit optimistic when I said all the pieces were there —
+from your email to the dev list, it looks like you've found the piece
+that's missing: filling in an avro_value_t from a json_t.  I had thought
+we had already written that, but it looks like we haven't.  It won't be
+too hard to write, though — you can pretty much copy/paste the
+avro_value_from_json code, and change the avro_value_get_[scalar] calls
+to avro_value_set_[scalar] calls.
+
+With that function available, you'd need to update the avro_schema code
+to include an optional default value.  For that, I'd just put an
+`avro_value_t` (not an `avro_value_t *`) into the schema type, and
+define an accessor and mutator function:
+
+  avro_value_t *
+  avro_schema_get_default_value(avro_schema_t schema)
+  {
+      return &schema->default_value;
+  }
+
+  int
+  avro_schema_set_default_value(avro_schema_t schema,
+                                avro_value_t *value)
+  {
+      avro_value_move_ref(&schema->default_value, value);
+  }
+
+(You can't just store the value pointer in the schema, since
+avro_value_t instances are often allocated on the stack.)
+
+Then you'd have to update the avro_schema_from_json function to check
+for a default value in the JSON schema text.  If one is there, you'd
+need to allocate a new value instance (avro_generic_class_from_schema +
+avro_generic_value_new), fill in that value from the JSON content (new
+avro_value_from_json function), and then assign it into the schema that
+you just created.
+
+Then on the resolution side, in those places where there are TODO
+messages about default values, you'd check the reader schema to see if a
+default value is available, and if so, use avro_value_copy or
+avro_value_copy_ref to return the default value when the caller asks for
+a field that isn't present in the writer schema.
+
+> I have modified avro_pipe.c to optionally take an external JSON schema
+> file and use a resolved reader/writer as per the example you sent to
+> Chris Laws, I will submit that too if you think it’s worth it.
+
+Definitely!  That sounds like a great addition.

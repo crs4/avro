@@ -549,12 +549,14 @@ avro_schema_enum_number_of_symbols(const avro_schema_t enum_schema)
 int
 avro_schema_record_field_append(const avro_schema_t record_schema,
 				const char *field_name,
-				const avro_schema_t field_schema)
+        const avro_schema_t field_schema,
+        const avro_value_t field_default_value)
 {
 	check_param(EINVAL, is_avro_schema(record_schema), "record schema");
 	check_param(EINVAL, is_avro_record(record_schema), "record schema");
 	check_param(EINVAL, field_name, "field name");
 	check_param(EINVAL, is_avro_schema(field_schema), "field schema");
+	check_param(EINVAL, is_avro_value(field_default_value), "field default value");  
 
 	if (!is_avro_id(field_name)) {
 		avro_set_error("Invalid Avro identifier");
@@ -575,6 +577,7 @@ avro_schema_record_field_append(const avro_schema_t record_schema,
 	new_field->index = record->fields->num_entries;
 	new_field->name = avro_strdup(field_name);
 	new_field->type = avro_schema_incref(field_schema);
+  new_field->default = field_default_value;
 	st_insert(record->fields, record->fields->num_entries,
 		  (st_data_t) new_field);
 	st_insert(record->fields_byname, (st_data_t) new_field->name,
@@ -915,7 +918,9 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 				    json_array_get(json_fields, i);
 				json_t *json_field_name;
 				json_t *json_field_type;
+				json_t *json_field_default;        
 				avro_schema_t json_field_type_schema;
+        avro_value_t avro_field_default_value;
 				int field_rval;
 
 				if (!json_is_object(json_field)) {
@@ -937,6 +942,19 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 					avro_schema_decref(*schema);
 					return EINVAL;
 				}
+				json_field_default =
+				    json_object_get(json_field, "default");
+				if (json_field_default) {
+          if (!avro_value_from_json_t(json_field_default,
+                                      &avro_field_default_value)) {
+            avro_set_error("Cannot parse default for record field %d", i);
+            avro_schema_decref(*schema);
+            return EINVAL;
+          }
+				} else {
+          int  rval;
+          check(rval, avro_value_reset(&avro_field_default_value));
+        }
 				field_rval =
 				    avro_schema_from_json_t(json_field_type,
 							    &json_field_type_schema,
@@ -947,9 +965,8 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 				}
 				field_rval =
 				    avro_schema_record_field_append(*schema,
-								    json_string_value
-								    (json_field_name),
-								    json_field_type_schema);
+								    json_string_value(json_field_name),
+                    json_field_type_schema, avro_field_default_value);
 				avro_schema_decref(json_field_type_schema);
 				if (field_rval != 0) {
 					avro_schema_decref(*schema);
@@ -1240,7 +1257,7 @@ avro_schema_t avro_schema_copy(avro_schema_t schema)
 				    avro_schema_copy(val.field->type);
 				avro_schema_record_field_append(new_schema,
 								val.field->name,
-								type_copy);
+                type_copy, val.field->default);
 			}
 		}
 		break;

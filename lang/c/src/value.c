@@ -48,6 +48,22 @@ avro_value_decref(avro_value_t *value)
 	value->self = NULL;
 }
 
+
+avro_value_t
+avro_value_null(void) {
+#if 0 // FIXME 
+  static struct avro_value {
+    NULL,
+    NULL
+  } val;
+  return val;
+#else
+  avro_value_t val;
+  val.iface = NULL;
+  val.self = NULL;
+#endif
+}
+
 void
 avro_value_copy_ref(avro_value_t *dest, const avro_value_t *src)
 {

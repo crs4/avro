@@ -259,7 +259,12 @@ struct avro_value_iface {
 			  avro_value_t *branch);
 };
 
-
+/**
+ * Provides an empty avro value that can be used as a slot filler.
+ */
+avro_value_t
+avro_value_null(void);
+  
 /**
  * Increments the reference count of a value instance.  Normally you
  * don't need to call this directly; you'll have a reference whenever
@@ -494,5 +499,8 @@ avro_value_to_json(const avro_value_t *value,
 #define avro_value_set_branch(value, discriminant, branch) \
     avro_value_call(value, set_branch, EINVAL, discriminant, branch)
 
+
+
+  
 CLOSE_EXTERN
 #endif

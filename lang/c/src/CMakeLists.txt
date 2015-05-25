@@ -56,6 +56,7 @@ set(AVRO_SRC
     errors.c
     generic.c
     io.c
+    json_value.c
     map.c
     memoize.c
     resolved-reader.c

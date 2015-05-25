@@ -546,6 +546,7 @@ avro_schema_enum_number_of_symbols(const avro_schema_t enum_schema)
 	return enump->symbols->num_entries;
 }
 
+
 int
 avro_schema_record_field_append(const avro_schema_t record_schema,
 				const char *field_name,
@@ -556,7 +557,6 @@ avro_schema_record_field_append(const avro_schema_t record_schema,
 	check_param(EINVAL, is_avro_record(record_schema), "record schema");
 	check_param(EINVAL, field_name, "field name");
 	check_param(EINVAL, is_avro_schema(field_schema), "field schema");
-	check_param(EINVAL, is_avro_value(field_default_value), "field default value");  
 
 	if (!is_avro_id(field_name)) {
 		avro_set_error("Invalid Avro identifier");
@@ -577,7 +577,7 @@ avro_schema_record_field_append(const avro_schema_t record_schema,
 	new_field->index = record->fields->num_entries;
 	new_field->name = avro_strdup(field_name);
 	new_field->type = avro_schema_incref(field_schema);
-  new_field->default = field_default_value;
+  new_field->default_value = field_default_value;
 	st_insert(record->fields, record->fields->num_entries,
 		  (st_data_t) new_field);
 	st_insert(record->fields_byname, (st_data_t) new_field->name,
@@ -952,8 +952,7 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
             return EINVAL;
           }
 				} else {
-          int  rval;
-          check(rval, avro_value_reset(&avro_field_default_value));
+          avro_field_default_value = avro_value_null();
         }
 				field_rval =
 				    avro_schema_from_json_t(json_field_type,
@@ -1257,7 +1256,7 @@ avro_schema_t avro_schema_copy(avro_schema_t schema)
 				    avro_schema_copy(val.field->type);
 				avro_schema_record_field_append(new_schema,
 								val.field->name,
-                type_copy, val.field->default);
+                type_copy, val.field->default_value);
 			}
 		}
 		break;

@@ -20,6 +20,7 @@
 #include <avro/platform.h>
 #include "avro/basics.h"
 #include "avro/schema.h"
+#include "avro/value.h"
 #include "avro_private.h"
 #include "st.h"
 
@@ -27,7 +28,7 @@ struct avro_record_field_t {
 	int index;
 	char *name;
 	avro_schema_t type;
-  avro_value_t default;
+  avro_value_t default_value;
 };
 
 struct avro_record_schema_t {

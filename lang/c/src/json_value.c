@@ -19,6 +19,7 @@
 #include <avro/platform.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "avro/allocation.h"
 #include "avro/errors.h"
@@ -115,7 +116,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
 			const char  *val = json_string_value(json);
 			size_t  size;
-			check_return(NULL, avro_value_get_string(value, val));
+			check_return(NULL, avro_value_set_string(value, val));
       return 0;
 		}
 #if 0

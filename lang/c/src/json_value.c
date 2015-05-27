@@ -41,12 +41,14 @@
 int 
 avro_value_from_json_t(const json_t *json, avro_value_t *value)
 {
-	check_param(EINVAL, value, "value");
 	check_param(EINVAL, json, "json");
-  
+	check_param(EINVAL, value, "value");  
+  fprintf(stderr, "we are in avro_value_from_json_t\n");
+  fprintf(stderr, "we are in avro_value_from_json_t -- %d\n", avro_value_get_type(value));
   switch (avro_value_get_type(value)) {
   case AVRO_BOOLEAN:
 		{
+  fprintf(stderr, "we have a boolean  in avro_value_from_json_t\n");        
       assert (json_is_boolean(json));
 			int  val = json_is_true(json);
 			check_return(NULL, avro_value_set_boolean(value, val));

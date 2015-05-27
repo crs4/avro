@@ -833,10 +833,11 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 	unsigned int i;
 	avro_schema_t named_type = NULL;
 
+  fprintf(stderr, "in avro_schema_from_json_t\n");    
 	if (avro_type_from_json_t(json, &type, named_schemas, &named_type, parent_namespace)) {
 		return EINVAL;
 	}
-
+  fprintf(stderr, "got type in avro_schema_from_json_t\n");    
 	switch (type) {
 	case AVRO_LINK:
 		*schema = avro_schema_link(named_type);
@@ -884,6 +885,8 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 			const char *record_name;
 			const char *record_namespace;
 
+      fprintf(stderr, "in load AVRO_RECORD in avro_schema_from_json_t\n");    
+      
 			if (!json_is_string(json_name)) {
 				avro_set_error("Record type must have a \"name\"");
 				return EINVAL;
@@ -942,18 +945,6 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 					avro_schema_decref(*schema);
 					return EINVAL;
 				}
-				json_field_default =
-				    json_object_get(json_field, "default");
-				if (json_field_default) {
-          if (!avro_value_from_json_t(json_field_default,
-                                      &avro_field_default_value)) {
-            avro_set_error("Cannot parse default for record field %d", i);
-            avro_schema_decref(*schema);
-            return EINVAL;
-          }
-				} else {
-          avro_field_default_value = avro_value_null();
-        }
 				field_rval =
 				    avro_schema_from_json_t(json_field_type,
 							    &json_field_type_schema,
@@ -962,10 +953,38 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 					avro_schema_decref(*schema);
 					return field_rval;
 				}
+        /* Preload field avro type */
+				json_field_default =
+				    json_object_get(json_field, "default");
+				if (json_field_default) {
+					fprintf(stderr, "got default on Record field %d\n", i);          
+          fprintf(stderr, "got default  in avro_schema_from_json_t\n");
+          avro_datum_t datum = avro_datum_from_schema(json_field_type_schema);
+          if (!datum) {
+            avro_schema_decref(*schema);            
+            return EINVAL;
+          }
+          check(field_rval, avro_datum_as_value(&avro_field_default_value,
+                                                datum));
+          if (!avro_value_from_json_t(json_field_default,
+                                      &avro_field_default_value)) {
+            avro_set_error("Cannot parse default for record field %d", i);
+            avro_schema_decref(*schema);
+            return EINVAL;
+          }
+          fprintf(stderr, "we got default in avro_schema_from_json_t\n");
+				} else {
+          fprintf(stderr, "assigning null value  in avro_schema_from_json_t\n");          
+          avro_field_default_value = avro_value_null();
+        }
 				field_rval =
 				    avro_schema_record_field_append(*schema,
 								    json_string_value(json_field_name),
                     json_field_type_schema, avro_field_default_value);
+				if (field_rval != 0) {
+					avro_schema_decref(*schema);
+					return field_rval;
+				}
 				avro_schema_decref(json_field_type_schema);
 				if (field_rval != 0) {
 					avro_schema_decref(*schema);
@@ -1169,7 +1188,9 @@ avro_schema_from_json_root(json_t *root, avro_schema_t *schema)
 	}
 
 	/* json_dumpf(root, stderr, 0); */
+  fprintf(stderr, "ready to call avro_schema_from_json_t\n");  
 	rval = avro_schema_from_json_t(root, schema, named_schemas, NULL);
+  fprintf(stderr, "done with avro_schema_from_json_t\n");    
 	json_decref(root);
 	st_foreach(named_schemas, HASH_FUNCTION_CAST named_schema_free_foreach, 0);
 	st_free_table(named_schemas);
@@ -1208,12 +1229,14 @@ avro_schema_from_json_length(const char *jsontext, size_t length,
 	json_t  *root;
 	json_error_t  json_error;
 
+  fprintf(stderr, "in avro_schema_from_json_length\n");
+
 	root = json_loadb(jsontext, length, 0, &json_error);
 	if (!root) {
 		avro_set_error("Error parsing JSON: %s", json_error.text);
 		return EINVAL;
 	}
-
+  fprintf(stderr, "ready to call avro_schema_from_json_root\n");
 	return avro_schema_from_json_root(root, schema);
 }
 

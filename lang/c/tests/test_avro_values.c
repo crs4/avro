@@ -1340,6 +1340,153 @@ test_record(void)
 }
 
 static int
+test_record_default(void)
+{
+	static const char  SCHEMA_JSON[] =
+	"{"
+	"  \"type\": \"record\","
+	"  \"name\": \"test\","
+	"  \"fields\": ["
+	"    { \"name\": \"b\", \"type\": \"boolean\", \"default\": \"false\" },"
+	"    { \"name\": \"i\", \"type\": \"int\",  \"default\": \"22\"  },"
+	"    { \"name\": \"s\", \"type\": \"string\", \"default\": \"hello!\" },"
+	"    { \"name\": \"ds\", \"type\": "
+	"      { \"type\": \"array\", \"items\": \"double\" } },"
+	"    { \"name\": \"sub\", \"type\": "
+	"      {"
+	"        \"type\": \"record\","
+	"        \"name\": \"subtest\","
+	"        \"fields\": ["
+	"          { \"name\": \"f\", \"type\": \"float\", \"default\": \"22.02\" },"
+	"          { \"name\": \"l\", \"type\": \"long\", \"default\": \"33\" }"
+	"        ]"
+	"      }"
+	"    },"
+	"    { \"name\": \"nested\", \"type\": [\"null\", \"test\"] }"
+	"  ]"
+	"}";
+
+	avro_schema_t  record_schema = NULL;
+	if (avro_schema_from_json_literal(SCHEMA_JSON, &record_schema)) {
+		fprintf(stderr, "Error parsing schema:\n  %s\n",
+			avro_strerror());
+		return EXIT_FAILURE;
+	}
+
+	avro_value_iface_t  *record_class =
+	    avro_generic_class_from_schema(record_schema);
+
+	int  rval;
+
+	avro_value_t  val;
+	try(avro_generic_value_new(record_class, &val),
+	    "Cannot create record");
+	check(rval, check_type_and_schema
+		    ("record", &val, AVRO_RECORD,
+		     avro_schema_incref(record_schema)));
+
+	size_t  field_count;
+	try(avro_value_get_size(&val, &field_count),
+	    "Cannot get field count");
+	if (field_count != 6) {
+		fprintf(stderr, "Unexpected field count\n");
+		return EXIT_FAILURE;
+	}
+
+	/* Assign to each field */
+	avro_value_t  field;
+	avro_value_t  element;
+	avro_value_t  subfield;
+	avro_value_t  branch;
+	const char  *name;
+	size_t  index;
+
+	try(avro_value_get_by_index(&val, 0, &field, NULL),
+	    "Cannot get field 0");
+	try(avro_value_set_boolean(&field, 1),
+	    "Cannot set field 0");
+
+	try(avro_value_get_by_index(&val, 1, &field, &name),
+	    "Cannot get field 1");
+	try(avro_value_set_int(&field, 42),
+	    "Cannot set field 1");
+	if (strcmp(name, "i") != 0) {
+		fprintf(stderr, "Unexpected name for field 1: %s\n", name);
+		return EXIT_FAILURE;
+	}
+
+	try(avro_value_get_by_index(&val, 2, &field, NULL),
+	    "Cannot get field 2");
+	try(avro_value_set_string(&field, "Hello world!"),
+	    "Cannot set field 2");
+
+	try(avro_value_get_by_name(&val, "i", &field, &index),
+	    "Cannot get \"i\" field");
+	if (index != 1) {
+		fprintf(stderr, "Unexpected index for \"i\" field: %" PRIsz "\n", index);
+		return EXIT_FAILURE;
+	}
+
+	try(avro_value_get_by_index(&val, 3, &field, NULL),
+	    "Cannot get field 3");
+	try(avro_value_append(&field, &element, NULL),
+	    "Cannot append to field 3");
+	try(avro_value_set_double(&element, 10.0),
+	    "Cannot set field 3, element 0");
+
+	try(avro_value_get_by_index(&val, 4, &field, NULL),
+	    "Cannot get field 4");
+
+	try(avro_value_get_by_index(&field, 0, &subfield, NULL),
+	    "Cannot get field 4, subfield 0");
+	try(avro_value_set_float(&subfield, 5.0f),
+	    "Cannot set field 4, subfield 0");
+
+	try(avro_value_get_by_index(&field, 1, &subfield, NULL),
+	    "Cannot get field 4, subfield 1");
+	try(avro_value_set_long(&subfield, 10000),
+	    "Cannot set field 4, subfield 1");
+
+	try(avro_value_get_by_index(&val, 5, &field, NULL),
+	    "Cannot get field 5");
+	try(avro_value_set_branch(&field, 0, &branch),
+	    "Cannot select null branch");
+
+	check_write_read(&val);
+	check_copy(&val);
+
+	/* Reset and verify that the fields are empty again */
+	try(avro_value_reset(&val),
+	    "Cannot reset record");
+
+	int  bval;
+	try(avro_value_get_by_index(&val, 0, &field, NULL),
+	    "Cannot get field 0");
+	try(avro_value_get_boolean(&field, &bval),
+	    "Cannot get field 0 value");
+	if (bval) {
+		fprintf(stderr, "Unexpected value for field 0\n");
+		return EXIT_FAILURE;
+	}
+
+	size_t  count;
+	try(avro_value_get_by_index(&val, 3, &field, NULL),
+	    "Cannot get field 3");
+	try(avro_value_get_size(&field, &count),
+	    "Cannot get field 3 size");
+	if (count != 0) {
+		fprintf(stderr, "Unexpected size for field 3\n");
+		return EXIT_FAILURE;
+	}
+
+	check_invalid_methods("record", &val);
+	avro_value_decref(&val);
+	avro_value_iface_decref(record_class);
+	avro_schema_decref(record_schema);
+	return EXIT_SUCCESS;
+}
+
+static int
 test_union(void)
 {
 	static const char  SCHEMA_JSON[] =
@@ -1440,6 +1587,7 @@ int main(void)
 		{ "fixed", test_fixed },
 		{ "map", test_map },
 		{ "record", test_record },
+    { "record_default", test_record_default },    
 		{ "union", test_union }
 	};
 

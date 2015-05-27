@@ -194,14 +194,12 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 {
 	check_param(EINVAL, json, "json");
 	check_param(EINVAL, value, "value");  
-  fprintf(stderr, "we are in avro_value_from_json_t\n");
-  fprintf(stderr, "we are in avro_value_from_json_t -- %d\n", avro_value_get_type(value));
   switch (avro_value_get_type(value)) {
   case AVRO_BOOLEAN:
 		{
-      fprintf(stderr, "we have a boolean  in avro_value_from_json_t\n");        
       assert (json_is_boolean(json));
 			int  val = json_is_true(json);
+      fprintf(stderr, "we have a boolean (%d) in avro_value_from_json_t\n", val);        
 			check_return(NULL, avro_value_set_boolean(value, val));
       return 0;
 		}
@@ -231,6 +229,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
       assert (json_is_real(json));
 			double  val = json_real_value(json);
+      fprintf(stderr, "we have a double (%g) in avro_value_from_json_t\n", val);      
 			check_return(NULL, avro_value_set_double(value, val));
       return 0;
 		}
@@ -239,6 +238,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
       assert (json_is_real(json));
 			float  val = json_real_value(json);
+      fprintf(stderr, "we have a float (%g) in avro_value_from_json_t\n", val);
 			check_return(NULL, avro_value_set_float(value, val));
       return 0;
 		}
@@ -247,6 +247,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
       assert (json_is_integer(json));
 			int32_t  val = json_integer_value(json);
+      fprintf(stderr, "we have a int (%d) in avro_value_from_json_t\n", val);      
 			check_return(NULL, avro_value_set_int(value, val));
       return 0;
 		}
@@ -255,12 +256,14 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
       assert (json_is_integer(json));
 			int64_t  val = json_integer_value(json);
+      fprintf(stderr, "we have a int64 (%d) in avro_value_from_json_t\n", val);            
 			check_return(NULL, avro_value_set_long(value, val));
       return 0;
 		}
 
 		case AVRO_NULL:
 		{
+      fprintf(stderr, "we have a NULL in avro_value_from_json_t\n");      
 			check_return(NULL, avro_value_set_null(value));
       return 0;
 		}
@@ -269,6 +272,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
 			const char  *val = json_string_value(json);
 			size_t  size;
+      fprintf(stderr, "we have a string (%s) in avro_value_from_json_t\n", val);
 			check_return(NULL, avro_value_set_string(value, val));
       return 0;
 		}
@@ -1131,11 +1135,9 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 	unsigned int i;
 	avro_schema_t named_type = NULL;
 
-  fprintf(stderr, "in avro_schema_from_json_t\n");    
 	if (avro_type_from_json_t(json, &type, named_schemas, &named_type, parent_namespace)) {
 		return EINVAL;
 	}
-  fprintf(stderr, "got type in avro_schema_from_json_t\n");    
 	switch (type) {
 	case AVRO_LINK:
 		*schema = avro_schema_link(named_type);
@@ -1183,8 +1185,6 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 			const char *record_name;
 			const char *record_namespace;
 
-      fprintf(stderr, "in load AVRO_RECORD in avro_schema_from_json_t\n");    
-      
 			if (!json_is_string(json_name)) {
 				avro_set_error("Record type must have a \"name\"");
 				return EINVAL;
@@ -1255,8 +1255,6 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 				json_field_default =
 				    json_object_get(json_field, "default");
 				if (json_field_default) {
-					fprintf(stderr, "got default on Record field %d\n", i);          
-          fprintf(stderr, "got default  in avro_schema_from_json_t\n");
           avro_datum_t datum = avro_datum_from_schema(json_field_type_schema);
           if (!datum) {
             avro_schema_decref(*schema);            
@@ -1270,9 +1268,7 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
             avro_schema_decref(*schema);
             return EINVAL;
           }
-          fprintf(stderr, "we got default in avro_schema_from_json_t\n");
 				} else {
-          fprintf(stderr, "assigning null value  in avro_schema_from_json_t\n");          
           avro_field_default_value = avro_value_null();
         }
 				field_rval =
@@ -1486,9 +1482,7 @@ avro_schema_from_json_root(json_t *root, avro_schema_t *schema)
 	}
 
 	/* json_dumpf(root, stderr, 0); */
-  fprintf(stderr, "ready to call avro_schema_from_json_t\n");  
 	rval = avro_schema_from_json_t(root, schema, named_schemas, NULL);
-  fprintf(stderr, "done with avro_schema_from_json_t\n");    
 	json_decref(root);
 	st_foreach(named_schemas, HASH_FUNCTION_CAST named_schema_free_foreach, 0);
 	st_free_table(named_schemas);
@@ -1527,14 +1521,11 @@ avro_schema_from_json_length(const char *jsontext, size_t length,
 	json_t  *root;
 	json_error_t  json_error;
 
-  fprintf(stderr, "in avro_schema_from_json_length\n");
-
 	root = json_loadb(jsontext, length, 0, &json_error);
 	if (!root) {
 		avro_set_error("Error parsing JSON: %s", json_error.text);
 		return EINVAL;
 	}
-  fprintf(stderr, "ready to call avro_schema_from_json_root\n");
 	return avro_schema_from_json_root(root, schema);
 }
 

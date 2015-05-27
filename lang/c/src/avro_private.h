@@ -87,6 +87,13 @@ extern "C" {
 		}							\
 	}
 
+#define check_return(retval, call) \
+	do { \
+		int  rval = call; \
+		if (rval != 0) { return (retval); } \
+	} while (0)
+  
+
 #define AVRO_UNUSED(var) (void)var;
 
 #define container_of(ptr_, type_, member_)  \

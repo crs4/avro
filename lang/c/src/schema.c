@@ -198,7 +198,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
   case AVRO_BOOLEAN:
 		{
       assert (json_is_boolean(json));
-			int  val = json_is_true(json);      
+			int  val = json_is_true(json);
 			check_return(NULL, avro_value_set_boolean(value, val));
       return 0;
 		}
@@ -227,7 +227,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		case AVRO_DOUBLE:
 		{
       assert (json_is_real(json));
-			double  val = json_real_value(json);      
+			double  val = json_real_value(json);
 			check_return(NULL, avro_value_set_double(value, val));
       return 0;
 		}
@@ -243,7 +243,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		case AVRO_INT32:
 		{
       assert (json_is_integer(json));
-			int32_t  val = json_integer_value(json);     
+			int32_t  val = json_integer_value(json);
 			check_return(NULL, avro_value_set_int(value, val));
       return 0;
 		}
@@ -251,7 +251,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		case AVRO_INT64:
 		{
       assert (json_is_integer(json));
-			int64_t  val = json_integer_value(json);            
+			int64_t  val = json_integer_value(json);
 			check_return(NULL, avro_value_set_long(value, val));
       return 0;
 		}

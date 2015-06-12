@@ -257,7 +257,7 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		}
 
 		case AVRO_NULL:
-		{     
+		{
 			check_return(NULL, avro_value_set_null(value));
       return 0;
 		}

@@ -199,7 +199,6 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
       assert (json_is_boolean(json));
 			int  val = json_is_true(json);
-      fprintf(stderr, "we have a boolean (%d) in avro_value_from_json_t\n", val);        
 			check_return(NULL, avro_value_set_boolean(value, val));
       return 0;
 		}
@@ -229,7 +228,6 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
       assert (json_is_real(json));
 			double  val = json_real_value(json);
-      fprintf(stderr, "we have a double (%g) in avro_value_from_json_t\n", val);      
 			check_return(NULL, avro_value_set_double(value, val));
       return 0;
 		}
@@ -238,7 +236,6 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
       assert (json_is_real(json));
 			float  val = json_real_value(json);
-      fprintf(stderr, "we have a float (%g) in avro_value_from_json_t\n", val);
 			check_return(NULL, avro_value_set_float(value, val));
       return 0;
 		}
@@ -247,7 +244,6 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
       assert (json_is_integer(json));
 			int32_t  val = json_integer_value(json);
-      fprintf(stderr, "we have a int (%d) in avro_value_from_json_t\n", val);      
 			check_return(NULL, avro_value_set_int(value, val));
       return 0;
 		}
@@ -256,14 +252,12 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
       assert (json_is_integer(json));
 			int64_t  val = json_integer_value(json);
-      fprintf(stderr, "we have a int64 (%d) in avro_value_from_json_t\n", val);            
 			check_return(NULL, avro_value_set_long(value, val));
       return 0;
 		}
 
 		case AVRO_NULL:
-		{
-      fprintf(stderr, "we have a NULL in avro_value_from_json_t\n");      
+		{     
 			check_return(NULL, avro_value_set_null(value));
       return 0;
 		}
@@ -272,7 +266,6 @@ avro_value_from_json_t(const json_t *json, avro_value_t *value)
 		{
 			const char  *val = json_string_value(json);
 			size_t  size;
-      fprintf(stderr, "we have a string (%s) in avro_value_from_json_t\n", val);
 			check_return(NULL, avro_value_set_string(value, val));
       return 0;
 		}
